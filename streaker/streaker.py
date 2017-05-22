@@ -1,15 +1,18 @@
 from flask import Flask
+import db.taskdb
 
 app = Flask(__name__)
+app.config.from_object(__name__)
 
 @app.route('/')
 def index():
-    pass
+    return get_tasks()
 
 @app.route('/tasks')
 def get_tasks():
     user_id = ""
-    tasks = taskdb.select_tasks_by_user(user_id)
+    tasks = db.taskdb.select_tasks_by_user(user_id)
+    return ('tasks placeholder', 200)
 
 @app.route('/add')
 def add_task():
@@ -17,12 +20,14 @@ def add_task():
     user_id = "" # from request
     description = "" # from request
     taskdb.add_task(task_id, user_id, description)
+    return ('add placeholder', 200)
     
 @app.route('/update')
 def update_task():
     task_id = ""
     description = ""
     taskdb.update_description(task_id, description)
+    return ('update placeholder', 200)
 
 @app.route('/reset')
 def reset_streak():
@@ -31,14 +36,16 @@ def reset_streak():
     that task to zero.
     """
     taskdb.reset_completion_dates(task_id)
+    return ('reset placeholder', 200)
 
-@app.route('/delete'):
+@app.route('/delete')
 def delete():
     """
     delete() takes the task id as parameter and deletes the task.
     """
     task_id = "" # from request
     taskdb.delete(task_id)
+    return ('delete placeholder', 200)
 
 @app.route('/complete')
 def mark_completed():
@@ -48,6 +55,7 @@ def mark_completed():
     """
     task_id = "" # from request
     taskdb.complete_today(task_id)
+    return ('mark_completed placeholder', 200)
 
 @app.route('/incomplete')
 def mark_incomplete():
@@ -60,6 +68,7 @@ def mark_incomplete():
     """
     task_id = "" # from request
     taskdb.mark_incomplete(task_id)
+    return ('incomplete placeholder', 200)
 
 @app.route('/login')
 def login():
@@ -67,16 +76,18 @@ def login():
     username = ""
     (salt, salted_pass) = userdb.get_credentials(username)
     valid = pw.verify_login(salt, salted_pass, password)
-    pass
+    return ('login placeholder', 200)
 
 @app.route('/logout')
 def logout():
-    pass
+    return ('logout placeholder', 200)
 
 @app.route('/register')
 def register():
     userdb.add_user()
+    return ('register placeholder', 200)
 
 @app.route('/unregister')
 def unregister():
     userdb.remove_user()
+    return ('unregister placeholder', 200)
