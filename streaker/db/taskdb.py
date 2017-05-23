@@ -1,6 +1,3 @@
-# TODO: add verification checks to each query to ensure the correct number
-# of rows modified.
-
 import records
 import datetime
 
@@ -31,8 +28,7 @@ def _get_task_by_id(rdb, taskid):
                           "from tasks where taskid = :taskid",
                           taskid=taskid)
     if len(task_rows) != 0:
-        # TODO: raise an exception or some biz here.
-        pass
+        raise ValueError("Failed to find any tasks with id: " + str(taskid))
 
     return _task_from_row(task_rows[0].as_dict())
 
@@ -50,11 +46,6 @@ def select_tasks_by_user(rdb, userid):
         task = _task_from_row(row.as_dict())
         tasks.append(task)
     
-    # todo: if cursor.start == Null:
-    #          task.Start = None
-    #       if cursor.end == Null:
-    #          task.End = None
-    
     return tasks
 
 def add_task(rdb, taskid, userid, description):
@@ -63,10 +54,10 @@ def add_task(rdb, taskid, userid, description):
     corresponding 'taskid' (a uuid.UUID), 'userid' (a uuid.UUID), and
     description (a string)
     """
-    insert_sql = rdb.query("insert into tasks (taskid, userid, description, start, end) " + \
-                           " values " + \
-                           "(:taskid, :userid, :desc, NULL, NULL)",
-                           taskid=str(taskid), userid=str(userid), desc=description)
+    result = rdb.query("insert into tasks (taskid, userid, description, start, end) " + \
+                       " values " + \
+                       "(:taskid, :userid, :desc, NULL, NULL)",
+                       taskid=str(taskid), userid=str(userid), desc=description)
 
 def update_description(rdb, taskid, description):
     result = rdb.query("update tasks set description = :desc where taskid = :taskid",
@@ -79,13 +70,8 @@ def reset_completion_dates(rdb, taskid):
 def delete_task(rdb, taskid):
     result = rdb.query("delete from tasks where taskid = :taskid",
                        taskid=taskid)
-    return result # TODO: remove this return
     
 def complete_today(rdb, taskid, override_date=None):
-    # if end is yesterday, mark today completed.
-    # if end is today, do nothing. it's probably a bug.
-    # otherwise, the user missed a day. reset their streak.
-
     today = datetime.date.today()
     if override_date is not None:
         today = override_date
@@ -111,8 +97,7 @@ def complete_today(rdb, taskid, override_date=None):
                            today=today,
                            taskid=taskid)
     else:
-        # TODO: shouldn't happen, raise an exception
-        pass
+        raise ValueError("Encountered an invalid path in complete_today(). Contact a programmer. Freak out!")
 
 def mark_incomplete(rdb, taskid, override_date=None):
     today = datetime.date.today()
@@ -139,5 +124,4 @@ def mark_incomplete(rdb, taskid, override_date=None):
                            yesterday=(today - one_day),
                            taskid=taskid)
     else:
-        # This case shouldn't ever occurr. TODO: raise an exception here.
-        pass
+        raise ValueError("Encountered an invalid path in mark_complete(). Contact a programmer. Freak out!")
