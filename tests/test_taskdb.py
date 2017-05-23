@@ -1,6 +1,3 @@
-# TODO: clean all this up to do pre & post-test actions
-# TODO: get all the right asserts for affected rows, etc.
-# TODO: figure out why shit isn't printing when you run these tests.
 import json
 import uuid
 import datetime
