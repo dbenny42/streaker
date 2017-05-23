@@ -3,7 +3,8 @@
 
 import records
 import datetime
-import task
+
+from streaker import task
 
 def build_mysql_url(user, pw, host, dbname):
     return 'mysql://' + user + ':' + pw + '@' + host + '/' + dbname
@@ -66,16 +67,12 @@ def add_task(rdb, taskid, userid, description):
                            " values " + \
                            "(:taskid, :userid, :desc, NULL, NULL)",
                            taskid=str(taskid), userid=str(userid), desc=description)
-    print "here we are!"
-    print insert_sql
-    print "aye"
 
 def update_description(rdb, taskid, description):
     result = rdb.query("update tasks set description = :desc where taskid = :taskid",
                        desc=description, taskid=taskid)
 
 def reset_completion_dates(rdb, taskid):
-    print "resetting those completion dates."
     sql = rdb.query("update tasks set start = NULL, end = NULL where taskid = :taskid",
                     taskid=taskid)
 
@@ -91,20 +88,14 @@ def complete_today(rdb, taskid, override_date=None):
 
     today = datetime.date.today()
     if override_date is not None:
-        print "overriding the date."
         today = override_date
     one_day = datetime.timedelta(1)
     yesterday = today - one_day
 
-    print "today is:", today
-
-    # three types of updates: new streak, streak was broken now updating, streak continuing.
-    
     task = _get_task_by_id(rdb, taskid)
     start = task.start
     end = task.end
     if start == None or (end is not None and end < yesterday):
-        print "brand new streak."
         result = rdb.query('update tasks set start = :today, end = :alsotoday ' + \
                            'where taskid = :taskid',
                            today=today,
@@ -112,23 +103,41 @@ def complete_today(rdb, taskid, override_date=None):
                            taskid=taskid)
         
     elif end == today:
-        print "doing NOTHING."
         # do nothing, log error. Marking twice completed by mistake.
         pass
     elif end == yesterday:
-        print "end is YESTERDAY???"
         # the streak continues, mark today as part of the streak.
         result = rdb.query('update tasks set end = :today where taskid = :taskid',
                            today=today,
                            taskid=taskid)
     else:
-        print "you fucked up???."
         # TODO: shouldn't happen, raise an exception
         pass
 
 def mark_incomplete(rdb, taskid, override_date=None):
-    # If start == end, set both to be null.
-    # otherwise, set end to be yesterday. this check prevents you from
-    # accidentally saying that they did a task yesterday when they
-    # haven't done it at all.
-    pass
+    today = datetime.date.today()
+    if override_date is not None:
+        today = override_date
+    one_day = datetime.timedelta(1)
+
+    task = _get_task_by_id(rdb, taskid)
+    start = task.start
+    end = task.end
+    if start == None:
+        # Both start and end should be none, do nothing. Probably marked
+        # incomplete in error.
+        pass
+    elif start == end:
+        # The streak only started today. Mark start and end to be none.
+        result = rdb.query('update tasks set end = NULL, start = NULL ' + \
+                           'where taskid = :taskid',
+                           taskid=taskid)
+    elif start < end:
+        # The streak is multi-day, so only remove today from the streak.
+        result = rdb.query('update tasks set end = :yesterday ' + \
+                           'where taskid = :taskid',
+                           yesterday=(today - one_day),
+                           taskid=taskid)
+    else:
+        # This case shouldn't ever occurr. TODO: raise an exception here.
+        pass

@@ -14,10 +14,8 @@ class Task:
         end_datetime - start_datetime, in days, roughly.
         """
         if self.start == None or self.end == None:
-            print "delete me, but this is why you're getting zero."
             return 0
 
-        print "delete me, FOR REAL."
         return (self.end - self.start).days
 
     def completed_today(self):
